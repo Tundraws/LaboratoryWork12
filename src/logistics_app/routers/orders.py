@@ -16,7 +16,8 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 
 @router.get("", response_model=list[OrderRead])
 def list_orders(session: Session = Depends(get_session), _: User = Depends(get_current_user)) -> list[DeliveryOrder]:
-    return list(session.scalars(select(DeliveryOrder).order_by(DeliveryOrder.created_at.desc(), DeliveryOrder.id.desc())))
+    statement = select(DeliveryOrder).order_by(DeliveryOrder.created_at.desc(), DeliveryOrder.id.desc())
+    return list(session.scalars(statement))
 
 
 @router.post("", response_model=OrderRead, status_code=status.HTTP_201_CREATED)
@@ -29,7 +30,11 @@ def create_delivery_order(
 
 
 @router.get("/{order_id}", response_model=OrderRead)
-def get_order(order_id: int, session: Session = Depends(get_session), _: User = Depends(get_current_user)) -> DeliveryOrder:
+def get_order(
+    order_id: int,
+    session: Session = Depends(get_session),
+    _: User = Depends(get_current_user),
+) -> DeliveryOrder:
     return get_or_404(session, DeliveryOrder, order_id, "Order")
 
 
@@ -61,4 +66,3 @@ def remove_order(
 ) -> ApiMessage:
     delete_order(session, order_id)
     return ApiMessage(detail="Order deleted")
-

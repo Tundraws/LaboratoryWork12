@@ -1,33 +1,34 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 
-from sqlalchemy import DateTime, Enum as SAEnum, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from logistics_app.database import Base
 
 
-class UserRole(str, Enum):
+class UserRole(StrEnum):
     admin = "admin"
     dispatcher = "dispatcher"
     viewer = "viewer"
 
 
-class VehicleStatus(str, Enum):
+class VehicleStatus(StrEnum):
     available = "available"
     assigned = "assigned"
     maintenance = "maintenance"
 
 
-class DriverStatus(str, Enum):
+class DriverStatus(StrEnum):
     available = "available"
     on_route = "on_route"
     suspended = "suspended"
 
 
-class OrderStatus(str, Enum):
+class OrderStatus(StrEnum):
     new = "new"
     planned = "planned"
     in_transit = "in_transit"
@@ -54,7 +55,7 @@ class Driver(Base):
     license_number: Mapped[str] = mapped_column(String(32), unique=True, index=True)
     phone: Mapped[str] = mapped_column(String(32))
     status: Mapped[DriverStatus] = mapped_column(SAEnum(DriverStatus), default=DriverStatus.available)
-    orders: Mapped[list["DeliveryOrder"]] = relationship(back_populates="driver")
+    orders: Mapped[list[DeliveryOrder]] = relationship(back_populates="driver")
 
 
 class Vehicle(Base):
@@ -65,8 +66,8 @@ class Vehicle(Base):
     model: Mapped[str] = mapped_column(String(120))
     capacity_kg: Mapped[int] = mapped_column(Integer)
     status: Mapped[VehicleStatus] = mapped_column(SAEnum(VehicleStatus), default=VehicleStatus.available)
-    orders: Mapped[list["DeliveryOrder"]] = relationship(back_populates="vehicle")
-    telemetry: Mapped[list["GlonassPing"]] = relationship(back_populates="vehicle", cascade="all, delete-orphan")
+    orders: Mapped[list[DeliveryOrder]] = relationship(back_populates="vehicle")
+    telemetry: Mapped[list[GlonassPing]] = relationship(back_populates="vehicle", cascade="all, delete-orphan")
 
 
 class Route(Base):
@@ -78,7 +79,7 @@ class Route(Base):
     destination: Mapped[str] = mapped_column(String(160))
     distance_km: Mapped[float] = mapped_column(Float)
     planned_duration_min: Mapped[int] = mapped_column(Integer)
-    orders: Mapped[list["DeliveryOrder"]] = relationship(back_populates="route")
+    orders: Mapped[list[DeliveryOrder]] = relationship(back_populates="route")
 
 
 class DeliveryOrder(Base):
@@ -111,7 +112,7 @@ class GlonassPing(Base):
     speed_kmh: Mapped[float] = mapped_column(Float)
     recorded_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+        default=lambda: datetime.now(UTC).replace(tzinfo=None),
         index=True,
     )
 

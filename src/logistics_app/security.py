@@ -5,7 +5,7 @@ import hashlib
 import hmac
 import json
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -37,7 +37,7 @@ def _b64decode(raw: str) -> bytes:
 
 def create_access_token(subject: str, role: str, secret: str, expires_minutes: int) -> str:
     header = {"alg": "HS256", "typ": "JWT"}
-    expires_at = datetime.now(timezone.utc) + timedelta(minutes=expires_minutes)
+    expires_at = datetime.now(UTC) + timedelta(minutes=expires_minutes)
     payload = {"sub": subject, "role": role, "exp": int(expires_at.timestamp())}
     signing_input = ".".join(
         [
@@ -65,7 +65,6 @@ def decode_access_token(token: str, secret: str) -> dict[str, Any]:
         payload = json.loads(_b64decode(payload_raw))
     except (ValueError, json.JSONDecodeError):
         raise credentials_error from None
-    if header.get("alg") != "HS256" or int(payload.get("exp", 0)) < int(datetime.now(timezone.utc).timestamp()):
+    if header.get("alg") != "HS256" or int(payload.get("exp", 0)) < int(datetime.now(UTC).timestamp()):
         raise credentials_error
     return payload
-

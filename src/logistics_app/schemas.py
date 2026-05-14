@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from logistics_app.models import DriverStatus, OrderStatus, UserRole, VehicleStatus
 
@@ -174,4 +174,3 @@ class CodeReviewItem(BaseModel):
     generated_by_ai: str
     problem: str
     fixed_by_student: str
-

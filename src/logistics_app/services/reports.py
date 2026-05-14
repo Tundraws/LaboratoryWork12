@@ -14,7 +14,9 @@ def dashboard(session: Session) -> DashboardReport:
     )
     active_orders = (
         session.scalar(
-            select(func.count(DeliveryOrder.id)).where(DeliveryOrder.status.in_([OrderStatus.planned, OrderStatus.in_transit]))
+            select(func.count(DeliveryOrder.id)).where(
+                DeliveryOrder.status.in_([OrderStatus.planned, OrderStatus.in_transit])
+            )
         )
         or 0
     )
@@ -56,4 +58,3 @@ def route_profitability(session: Session) -> list[RouteProfitability]:
         )
         for row in rows
     ]
-

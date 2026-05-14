@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -51,7 +51,7 @@ def update_order(session: Session, order_id: int, payload: OrderUpdate) -> Deliv
     if "driver_id" in data and data["driver_id"] is not None:
         get_or_404(session, Driver, data["driver_id"], "Driver")
     if data.get("status") == OrderStatus.delivered:
-        data["delivered_at"] = datetime.now(timezone.utc).replace(tzinfo=None)
+        data["delivered_at"] = datetime.now(UTC).replace(tzinfo=None)
     for field, value in data.items():
         setattr(order, field, value)
     session.commit()

@@ -36,7 +36,11 @@ def create_vehicle(
 
 
 @router.get("/{vehicle_id}", response_model=VehicleRead)
-def get_vehicle(vehicle_id: int, session: Session = Depends(get_session), _: User = Depends(get_current_user)) -> Vehicle:
+def get_vehicle(
+    vehicle_id: int,
+    session: Session = Depends(get_session),
+    _: User = Depends(get_current_user),
+) -> Vehicle:
     return get_or_404(session, Vehicle, vehicle_id, "Vehicle")
 
 
@@ -65,4 +69,3 @@ def delete_vehicle(
     session.delete(vehicle)
     session.commit()
     return ApiMessage(detail="Vehicle deleted")
-

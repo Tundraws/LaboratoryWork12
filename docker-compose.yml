@@ -1,0 +1,21 @@
+services:
+  logistics-api:
+    build: .
+    container_name: lr12-logistics-api
+    environment:
+      DATABASE_URL: sqlite:////app/data/logistics.db
+      JWT_SECRET: ${JWT_SECRET:-dev-compose-secret}
+      ACCESS_TOKEN_EXPIRE_MINUTES: 120
+    ports:
+      - "8000:8000"
+    volumes:
+      - logistics-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  logistics-data:
+

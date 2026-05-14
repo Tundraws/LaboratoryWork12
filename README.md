@@ -56,6 +56,14 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements-dev.txt
 ```
 
+Проект использует `src/`-layout, поэтому для локального запуска из корня нужно добавить папку `src` в `PYTHONPATH`.
+
+PowerShell:
+
+```powershell
+$env:PYTHONPATH = "src"
+```
+
 При необходимости можно создать демо-данные:
 
 ```bash
@@ -64,9 +72,10 @@ python -m logistics_app
 
 ## Инструкция по запуску
 
-Запуск локально:
+Запуск локально из PowerShell:
 
-```bash
+```powershell
+$env:PYTHONPATH = "src"
 uvicorn logistics_app.main:app --reload
 ```
 

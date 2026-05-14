@@ -6,7 +6,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN adduser --disabled-password --gecos "" appuser
+RUN adduser --disabled-password --gecos "" appuser \
+    && mkdir -p /home/appuser/data \
+    && chown -R appuser:appuser /home/appuser/data
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -17,4 +19,3 @@ USER appuser
 
 EXPOSE 8000
 CMD ["uvicorn", "logistics_app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-

@@ -15,3 +15,6 @@ Automated tests were executed before this comment.
 ```
 
 Если `OPENAI_API_KEY` задан, workflow отправляет diff-stat в OpenAI API и публикует AI summary с кратким описанием изменений, рисков и выполненных тестов.
+
+CI workflow verification branch.
+

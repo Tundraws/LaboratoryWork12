@@ -1,0 +1,2 @@
+"""Logistics management application."""
+

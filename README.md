@@ -2,45 +2,52 @@
 
 Студент: Мельникова Анастасия  
 Группа: 220032-11  
-Вариант: 13, повышенная сложность  
+Номер лабораторной работы: 12  
+Номер варианта: 13  
+Тип варианта: повышенная сложность  
 Предметная область: система управления логистикой
 
 ## Описание программы
 
-Logistics Management System — REST API для управления логистикой: маршруты, транспортные средства, водители, заказы на доставку и GLONASS-телеметрия.
+Logistics Management System — FastAPI-приложение для управления логистикой. Система позволяет вести маршруты, транспортные средства, водителей, заказы на доставку и GLONASS-телеметрию.
 
 Реализовано:
 
-- JWT-аутентификация: bootstrap администратора, логин, текущий пользователь.
+- JWT-аутентификация: создание первого администратора, логин, получение текущего пользователя.
 - Роли доступа: `admin`, `dispatcher`, `viewer`.
-- CRUD для водителей, транспортных средств, маршрутов и заказов.
-- Назначение водителя и ТС на заказ с проверкой грузоподъемности.
-- Прием GLONASS-координат и получение последней точки ТС.
-- Аналитика: dashboard и отчет прибыльности маршрутов.
-- Code review AI-кода и журнал промптов в `PROMPT_LOG.md`.
-- GitHub Actions workflow для тестов и AI-summary Pull Request.
+- CRUD для маршрутов, транспортных средств, водителей и заказов.
+- Связи между сущностями: заказ связан с маршрутом, водителем и ТС; GLONASS-точки связаны с ТС.
+- Проверка грузоподъемности при назначении транспорта на заказ.
+- Аналитика: dashboard и отчет по прибыльности маршрутов.
+- Админ-функция просмотра пользователей.
+- Docker-конфигурация и GitHub Actions workflow для Pull Request.
+- Unit/API-тесты с покрытием около 93%.
 
-## Технологии
+## Язык программирования и технологии
 
-- Python 3.12
+- Python 3.12+
 - FastAPI
 - SQLAlchemy 2
 - Pydantic / pydantic-settings
-- SQLite по умолчанию, конфигурация через `DATABASE_URL`
+- SQLite по умолчанию, настройка через `DATABASE_URL`
 - pytest, pytest-cov, httpx
-- Docker, docker-compose
+- Docker и docker-compose
 - GitHub Actions
 
-## Структура
+## Структура проекта
 
 ```text
 src/logistics_app/      исходный код приложения
 tests/                  pytest-тесты
-docs/                   материалы code review и SQL-аналитики
+docs/                   материалы code review и доказательство PR-комментария
 .github/workflows/      CI/CD workflow
+README.md               инструкция по сборке и запуску
+PROMPT_LOG.md           журнал промптов по обязательным заданиям
 ```
 
-## Сборка и запуск локально
+## Инструкция по сборке
+
+Создать виртуальное окружение и установить зависимости:
 
 ```bash
 python -m venv .venv
@@ -49,13 +56,15 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements-dev.txt
 ```
 
-Создать демо-данные:
+При необходимости можно создать демо-данные:
 
 ```bash
 python -m logistics_app
 ```
 
-Запустить API:
+## Инструкция по запуску
+
+Запуск локально:
 
 ```bash
 uvicorn logistics_app.main:app --reload
@@ -73,13 +82,13 @@ Swagger UI:
 http://127.0.0.1:8000/docs
 ```
 
-## Запуск через Docker
+Запуск через Docker:
 
 ```bash
 docker compose up --build
 ```
 
-Проверка:
+Проверка работоспособности:
 
 ```bash
 curl http://127.0.0.1:8000/health
@@ -93,7 +102,7 @@ JWT_SECRET=change-me-in-production
 ACCESS_TOKEN_EXPIRE_MINUTES=120
 ```
 
-## Примеры использования API
+## Примеры API-запросов
 
 Создать первого администратора:
 
@@ -129,6 +138,15 @@ curl -X POST http://127.0.0.1:8000/vehicles ^
   -d "{\"plate_number\":\"А123ВС77\",\"model\":\"KAMAZ 5490\",\"capacity_kg\":20000}"
 ```
 
+Создать водителя:
+
+```bash
+curl -X POST http://127.0.0.1:8000/drivers ^
+  -H "Authorization: Bearer <TOKEN>" ^
+  -H "Content-Type: application/json" ^
+  -d "{\"full_name\":\"Ivan Petrov\",\"license_number\":\"DRV202613\",\"phone\":\"+79001234567\"}"
+```
+
 Создать заказ:
 
 ```bash
@@ -136,6 +154,15 @@ curl -X POST http://127.0.0.1:8000/orders ^
   -H "Authorization: Bearer <TOKEN>" ^
   -H "Content-Type: application/json" ^
   -d "{\"cargo_name\":\"Medical equipment\",\"weight_kg\":1200,\"customer_name\":\"Clinic Partner\",\"route_id\":1}"
+```
+
+Назначить водителя и ТС на заказ:
+
+```bash
+curl -X POST http://127.0.0.1:8000/orders/1/assign ^
+  -H "Authorization: Bearer <TOKEN>" ^
+  -H "Content-Type: application/json" ^
+  -d "{\"driver_id\":1,\"vehicle_id\":1}"
 ```
 
 Отправить GLONASS-точку:
@@ -156,12 +183,11 @@ curl -H "Authorization: Bearer <TOKEN>" http://127.0.0.1:8000/reports/dashboard
 ## Тесты и покрытие
 
 ```bash
-pytest
+python -m pytest
 ```
 
-Команда запускает unit/API-тесты и формирует `coverage.xml`.
+Текущий результат: тесты проходят, покрытие около 93%.
 
 ## CI/CD и AI
 
-Workflow `.github/workflows/ai-pr-summary.yml` запускается на Pull Request, выполняет тесты и публикует комментарий с описанием изменений. Если секрет `OPENAI_API_KEY` не задан, workflow оставляет детерминированный fallback-комментарий, чтобы проверка CI оставалась рабочей.
-
+Workflow `.github/workflows/ai-pr-review.yml` запускается на Pull Request, выполняет тесты и публикует комментарий с описанием изменений. Если секрет `OPENAI_API_KEY` не задан, workflow публикует fallback summary, чтобы CI оставался рабочим без внешнего API.

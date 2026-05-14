@@ -24,6 +24,7 @@ def session() -> Generator[Session, None, None]:
     with TestingSessionLocal() as db:
         yield db
     Base.metadata.drop_all(bind=engine)
+    engine.dispose()
 
 
 @pytest.fixture()
@@ -84,4 +85,3 @@ def create_vehicle(client: TestClient, headers: dict[str, str], capacity_kg: int
     )
     assert response.status_code == 201
     return response.json()["id"]
-

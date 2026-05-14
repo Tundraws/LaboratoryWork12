@@ -99,3 +99,59 @@ def test_validation_rejects_invalid_plate_and_coordinates(client: TestClient) ->
     )
     assert bad_ping.status_code == 422
 
+
+def test_catalog_crud_and_admin_user_list(client: TestClient) -> None:
+    headers = auth_headers(client)
+    route_id = create_route(client, headers)
+    driver_id = create_driver(client, headers)
+    vehicle_id = create_vehicle(client, headers)
+
+    users = client.get("/admin/users", headers=headers)
+    assert users.status_code == 200
+    assert users.json()[0]["email"] == "admin@example.com"
+
+    assert client.get("/routes", headers=headers).status_code == 200
+    assert client.get(f"/routes/{route_id}", headers=headers).json()["name"] == "Moscow - Tver"
+    updated_route = client.put(f"/routes/{route_id}", headers=headers, json={"planned_duration_min": 240})
+    assert updated_route.status_code == 200
+    assert updated_route.json()["planned_duration_min"] == 240
+
+    assert client.get("/drivers", headers=headers).status_code == 200
+    updated_driver = client.put(f"/drivers/{driver_id}", headers=headers, json={"status": "suspended"})
+    assert updated_driver.status_code == 200
+    assert updated_driver.json()["status"] == "suspended"
+
+    assert client.get("/vehicles", headers=headers).status_code == 200
+    updated_vehicle = client.put(f"/vehicles/{vehicle_id}", headers=headers, json={"status": "maintenance"})
+    assert updated_vehicle.status_code == 200
+    assert updated_vehicle.json()["status"] == "maintenance"
+
+    assert client.delete(f"/drivers/{driver_id}", headers=headers).status_code == 200
+    assert client.delete(f"/vehicles/{vehicle_id}", headers=headers).status_code == 200
+    assert client.delete(f"/routes/{route_id}", headers=headers).status_code == 200
+
+
+def test_order_delete_and_assignment_reject_suspended_driver(client: TestClient) -> None:
+    headers = auth_headers(client)
+    route_id = create_route(client, headers)
+    driver_id = create_driver(client, headers)
+    vehicle_id = create_vehicle(client, headers)
+    client.put(f"/drivers/{driver_id}", headers=headers, json={"status": "suspended"})
+    created = client.post(
+        "/orders",
+        headers=headers,
+        json={"cargo_name": "Boxes", "weight_kg": 100, "customer_name": "Retail", "route_id": route_id},
+    )
+    order_id = created.json()["id"]
+
+    rejected = client.post(
+        f"/orders/{order_id}/assign",
+        headers=headers,
+        json={"driver_id": driver_id, "vehicle_id": vehicle_id},
+    )
+    assert rejected.status_code == 422
+    assert "suspended" in rejected.json()["detail"]
+
+    deleted = client.delete(f"/orders/{order_id}", headers=headers)
+    assert deleted.status_code == 200
+    assert client.get(f"/orders/{order_id}", headers=headers).status_code == 404

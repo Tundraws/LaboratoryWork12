@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -19,7 +19,7 @@ def create_order(session: Session, payload: OrderCreate) -> DeliveryOrder:
     if payload.driver_id and driver is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Driver not found")
     if vehicle and payload.weight_kg > vehicle.capacity_kg:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Cargo exceeds vehicle capacity")
+        raise HTTPException(status_code=422, detail="Cargo exceeds vehicle capacity")
 
     order = DeliveryOrder(
         cargo_name=payload.cargo_name,
@@ -47,11 +47,11 @@ def update_order(session: Session, order_id: int, payload: OrderUpdate) -> Deliv
         vehicle = get_or_404(session, Vehicle, data["vehicle_id"], "Vehicle")
         new_weight = data.get("weight_kg", order.weight_kg)
         if new_weight > vehicle.capacity_kg:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Cargo exceeds vehicle capacity")
+            raise HTTPException(status_code=422, detail="Cargo exceeds vehicle capacity")
     if "driver_id" in data and data["driver_id"] is not None:
         get_or_404(session, Driver, data["driver_id"], "Driver")
     if data.get("status") == OrderStatus.delivered:
-        data["delivered_at"] = datetime.utcnow()
+        data["delivered_at"] = datetime.now(timezone.utc).replace(tzinfo=None)
     for field, value in data.items():
         setattr(order, field, value)
     session.commit()
@@ -64,11 +64,11 @@ def assign_order(session: Session, order_id: int, payload: AssignmentRequest) ->
     driver = get_or_404(session, Driver, payload.driver_id, "Driver")
     vehicle = get_or_404(session, Vehicle, payload.vehicle_id, "Vehicle")
     if driver.status == DriverStatus.suspended:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Driver is suspended")
+        raise HTTPException(status_code=422, detail="Driver is suspended")
     if vehicle.status == VehicleStatus.maintenance:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Vehicle is under maintenance")
+        raise HTTPException(status_code=422, detail="Vehicle is under maintenance")
     if order.weight_kg > vehicle.capacity_kg:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Cargo exceeds vehicle capacity")
+        raise HTTPException(status_code=422, detail="Cargo exceeds vehicle capacity")
     order.driver_id = driver.id
     order.vehicle_id = vehicle.id
     order.status = OrderStatus.planned
@@ -89,4 +89,3 @@ def _reserve_resources(vehicle: Vehicle | None, driver: Driver | None) -> None:
         vehicle.status = VehicleStatus.assigned
     if driver is not None and driver.status == DriverStatus.available:
         driver.status = DriverStatus.on_route
-
